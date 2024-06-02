@@ -35,6 +35,17 @@ rmeans_texpr <- row_means_by_tissue(exprs_3268, type_3268, "Tumor cells")
 
 # TO DO LIST:
 # Put rmeans double values into dataframe
+rmeans_expr_difference <- abs(rmeans_nexpr - rmeans_texpr)
+
 # Check uniqueness of IDs
+n_repeats <- length(unique(names(rmeans_nexpr))) - length(names(rmeans_nexpr))
+t_repeats <- length(unique(names(rmeans_texpr))) - length(names(rmeans_texpr))
+cat("Number of repeats (N, T):", n_repeats, t_repeats)
+
+
 # Translate name to name that would match TRRUST
 # Remove the irrelevant data points from TRRUST.
+
+
+# Dump files
+write.csv(TRRUST, "network-data/TRRUST.csv")
