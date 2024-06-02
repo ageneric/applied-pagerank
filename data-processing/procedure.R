@@ -7,6 +7,10 @@ TRRUST <- read.csv("data/trrust_rawdata.human.tsv", sep = "\t", header=FALSE)
 # Reading series matrix .txt file into ExpressionSet object:
 gse_3268 <- getGEO(filename="data/GSE3268_series_matrix.txt.gz")
 
+# Reading GPL file, used to map GEO gene identifiers to actual gene names:
+gpl96 <- getGEO('GPL96', destdir=".")
+
+
 # At this point, if you have a look at the large ExpressionSet then you can see that
 # you will get the information about normal vs tumour tissue in the 'phenoData/data' section (the authors for different datasets have it under different names, so you need to do this manually),
 # whilst you can get the actual gene expression data in 'assayData/exprs'.
@@ -33,9 +37,9 @@ row_means_by_tissue <- function(data, tissue_types, tissue_type) {
 rmeans_nexpr <- row_means_by_tissue(exprs_3268, type_3268, "Normal cells")
 rmeans_texpr <- row_means_by_tissue(exprs_3268, type_3268, "Tumor cells")
 
-# TO DO LIST:
 # Put rmeans double values into dataframe
-rmeans_expr_difference <- abs(rmeans_nexpr - rmeans_texpr)
+# rmeans_expr_difference <- abs(rmeans_nexpr - rmeans_texpr)
+expression_df <- data.frame(rmeans_nexpr, rmeans_texpr)
 
 # Check uniqueness of IDs
 n_repeats <- length(unique(names(rmeans_nexpr))) - length(names(rmeans_nexpr))
@@ -44,8 +48,18 @@ cat("Number of repeats (N, T):", n_repeats, t_repeats)
 
 
 # Translate name to name that would match TRRUST
-# Remove the irrelevant data points from TRRUST.
 
+# https://warwick.ac.uk/fac/sci/moac/people/students/peter_cock/r/geo/
+gene_symbol_table <- Table(gpl96)[c("ID","Gene Symbol")]
+ids <- gene_symbol_table[["ID"]]
+symbols <- gene_symbol_table[["Gene Symbol"]]
+id_symbol_map <- setNames(symbols, ids)
+
+expression_df$gene = id_symbol_map[as.character(rownames(expression_df))]
+
+
+# TODO: Remove the irrelevant data points from TRRUST.
 
 # Dump files
 write.csv(TRRUST, "network-data/TRRUST.csv")
+write.csv(expression_df, "network-data/expressions.csv")
