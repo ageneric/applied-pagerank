@@ -2,7 +2,7 @@
 library("GEOquery")
 
 # (this line downloads GPL96.soft.gz, only needs to run once; move this file to data/)
-# gpl96 <- getGEO('GPL96', destdir=".")
+gpl96 <- getGEO('GPL96', destdir=".")
 
 # Reading whole TRN into table
 TRRUST <- read.csv("data/trrust_rawdata.human.tsv", sep = "\t", header=FALSE)
@@ -40,9 +40,12 @@ row_means_by_tissue <- function(data, tissue_types, tissue_type) {
 rmeans_nexpr <- row_means_by_tissue(exprs_3268, type_3268, "Normal cells")
 rmeans_texpr <- row_means_by_tissue(exprs_3268, type_3268, "Tumor cells")
 
+# ~ Winner
+
 # Put rmeans double values into dataframe
 # rmeans_expr_difference <- abs(rmeans_nexpr - rmeans_texpr)
 expression_df <- data.frame(rmeans_nexpr, rmeans_texpr)
+
 
 # Check uniqueness of IDs
 n_repeats <- length(unique(names(rmeans_nexpr))) - length(names(rmeans_nexpr))
@@ -50,7 +53,7 @@ t_repeats <- length(unique(names(rmeans_texpr))) - length(names(rmeans_texpr))
 cat("Number of repeats (N, T):", n_repeats, t_repeats)
 
 
-# Translate name to name that would match TRRUST
+# Translate name to name that would match TRRUST data
 # Ref: https://warwick.ac.uk/fac/sci/moac/people/students/peter_cock/r/geo/
 gene_symbol_table <- Table(gpl96)[c("ID","Gene Symbol")]
 ids <- gene_symbol_table[["ID"]]
