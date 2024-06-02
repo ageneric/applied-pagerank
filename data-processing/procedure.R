@@ -1,6 +1,9 @@
 # Step-by-step instructions (after installing Bioconductor and GEOquery):
 library("GEOquery")
 
+# (this line downloads GPL96.soft.gz, only needs to run once; move this file to data/)
+# gpl96 <- getGEO('GPL96', destdir=".")
+
 # Reading whole TRN into table
 TRRUST <- read.csv("data/trrust_rawdata.human.tsv", sep = "\t", header=FALSE)
 
@@ -8,11 +11,11 @@ TRRUST <- read.csv("data/trrust_rawdata.human.tsv", sep = "\t", header=FALSE)
 gse_3268 <- getGEO(filename="data/GSE3268_series_matrix.txt.gz")
 
 # Reading GPL file, used to map GEO gene identifiers to actual gene names:
-gpl96 <- getGEO('GPL96', destdir=".")
-
+gpl96 <- getGEO(filename='data/GPL96.soft.gz')
 
 # At this point, if you have a look at the large ExpressionSet then you can see that
-# you will get the information about normal vs tumour tissue in the 'phenoData/data' section (the authors for different datasets have it under different names, so you need to do this manually),
+# you will get the information about normal vs tumour tissue in the 'phenoData/data' section
+# (the authors for different datasets have it under different names, so you need to do this manually),
 # whilst you can get the actual gene expression data in 'assayData/exprs'.
 
 # The procedure to get a matrix of data ordered according to tissue category is shown below.
@@ -48,8 +51,7 @@ cat("Number of repeats (N, T):", n_repeats, t_repeats)
 
 
 # Translate name to name that would match TRRUST
-
-# https://warwick.ac.uk/fac/sci/moac/people/students/peter_cock/r/geo/
+# Ref: https://warwick.ac.uk/fac/sci/moac/people/students/peter_cock/r/geo/
 gene_symbol_table <- Table(gpl96)[c("ID","Gene Symbol")]
 ids <- gene_symbol_table[["ID"]]
 symbols <- gene_symbol_table[["Gene Symbol"]]
@@ -58,8 +60,8 @@ id_symbol_map <- setNames(symbols, ids)
 expression_df$gene = id_symbol_map[as.character(rownames(expression_df))]
 
 
-# TODO: Remove the irrelevant data points from TRRUST.
-
-# Dump files
+# For convenience, to process the expression values for duplicate genes,
+# and to take care of paired up genes by splitting on ///,
+# we now dump everything to .csv files for processing in Python ~ Kevin
 write.csv(TRRUST, "network-data/TRRUST.csv")
 write.csv(expression_df, "network-data/expressions.csv")
