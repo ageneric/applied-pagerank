@@ -4,16 +4,14 @@ library("GEOquery")
 # Reading whole TRN into table
 TRRUST <- read.csv("data/trrust_rawdata.human.tsv", sep = "\t", header=FALSE)
 
-# Reading series matrices .txt files into ExpressionSet objects:
-gse_15852 <- getGEO(filename="data/GSE15852_series_matrix.txt.gz")
+# Reading series matrix .txt file into ExpressionSet object:
 gse_3268 <- getGEO(filename="data/GSE3268_series_matrix.txt.gz")
 
-# At this point, if you have a look at the large ExpressionSets then you can see that
+# At this point, if you have a look at the large ExpressionSet then you can see that
 # you will get the information about normal vs tumour tissue in the 'phenoData/data' section (the authors for different datasets have it under different names, so you need to do this manually),
 # whilst you can get the actual gene expression data in 'assayData/exprs'.
 
-
-# The procedure to get a matrix of data ordered according to tissue category is shown below, here for gse_3268.
+# The procedure to get a matrix of data ordered according to tissue category is shown below.
 # Extract expression data and phenotype data
 exprs_3268 <- exprs(gse_3268)
 pheno_3268 <- pData(gse_3268)
@@ -22,11 +20,21 @@ pheno_3268 <- pData(gse_3268)
 merged_3268 <- data.frame(exprs_3268)
 merged_3268["TissueType", ] <- pheno_3268[["description"]]
 merged_3268 <- merged_3268[c(nrow(merged_3268), 1:(nrow(merged_3268)-1)), ]
-# N.B. 'description' name is used because that is what the authors named it
+type_3268 <- merged_3268["TissueType", ]
+# N.B. 'description' name is used because that is what the authors named it in this dataset.
 
-# At this point in time, this gives us the gene expression values for all of our samples, and tells us which ones come from normal tissue and which ones from cancerous.
+# Calculating the mean expression values for normal vs tumour tissue
+row_means_by_tissue <- function(data, tissue_types, tissue_type) {
+  selected_columns <- which(tissue_types == tissue_type)
+  selected_data <- data[, selected_columns]
+  rowMeans(selected_data)
+}
+
+rmeans_nexpr <- row_means_by_tissue(exprs_3268, type_3268, "Normal cells")
+rmeans_texpr <- row_means_by_tissue(exprs_3268, type_3268, "Tumor cells")
 
 # TO DO LIST:
-# Average out the data for each type of tissue, and check uniqueness etc. of IDs
+# Put rmeans double values into dataframe
+# Check uniqueness of IDs
 # Translate name to name that would match TRRUST
 # Remove the irrelevant data points from TRRUST.
