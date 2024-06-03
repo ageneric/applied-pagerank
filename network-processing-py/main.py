@@ -6,12 +6,16 @@ from math import sqrt
 
 DATA_EXPRESSIONS = '../network-data/expressions.csv'
 DATA_TRRUST = '../network-data/TRRUST.csv'
+DATA_STRING = '../network-data/STRING_by_gene.csv'
 
 with open(DATA_EXPRESSIONS, 'r') as f_expressions:
     expressions = pd.read_csv(f_expressions)
 
 with open(DATA_TRRUST, 'r') as f_trrust:
     trrust = pd.read_csv(f_trrust)
+
+with open(DATA_STRING, 'r') as f_string_gene:
+    string_gene = pd.read_csv(f_string_gene)
 
 
 def get_gene_differential_expressions():
@@ -67,12 +71,14 @@ if __name__ == '__main__':
     gene_deg = get_gene_differential_expressions()
 
     threshold = 2
-    filtered_list = list(filter(lambda x: abs(gene_deg[x]) > threshold, gene_deg))
+    filtered_list = [x for x in gene_deg if abs(gene_deg[x]) > threshold]
+
+    weighting = GM
 
     for gene in filtered_list:
         neighbours = get_gene_directed_neighbours(gene, filtered_list)
         neighbour_genes, neighbour_rel = neighbours['V2'], neighbours['V3']
-        network.add_weighted_edges_from((gene, n, GM(gene_deg[gene], gene_deg[n])) for n in neighbour_genes)
+        network.add_weighted_edges_from((gene, n, weighting(gene_deg[gene], gene_deg[n])) for n in neighbour_genes)
 
     nx.draw(network, with_labels=True)
     plt.show()
