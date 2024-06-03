@@ -14,7 +14,7 @@ with open(DATA_TRRUST, 'r') as f_trrust:
 
 
 def get_gene_differential_expressions():
-    gene_deg = {}  # differentially expressed genes
+    gene_deg_totals = {}  # differentially expressed genes
 
     # group together and process the expression values by gene
     # iterrows() is slow, but we will only iterate over ~20000 samples
@@ -28,15 +28,21 @@ def get_gene_differential_expressions():
         else:
             genes = [row['gene']]
 
-        differential = row['rmeans_texpr'] - row['rmeans_nexpr']
-
         for gene in genes:
-            if gene in gene_deg:
-                gene_deg[gene] += differential
+            if gene in gene_deg_totals:
+                # we want to compute the mean of all gene
+                gene_deg_totals[gene][0] += 1
+                gene_deg_totals[gene][1] += row['rmeans_texpr'] - row['rmeans_nexpr']
             else:
-                gene_deg[gene] = differential
+                gene_deg_totals[gene] = [1, row['rmeans_texpr'] - row['rmeans_nexpr']]
 
-    return gene_deg
+    # compute the difference of the averages by dividing by the count
+    ret = {}
+    for key, value in gene_deg_totals.items():
+        count, expression_difference_total = value
+        ret[key] = abs(expression_difference_total / count)
+
+    return ret
 
 
 def get_gene_directed_neighbours(gene_name):
@@ -52,7 +58,7 @@ if __name__ == '__main__':
     # and doesn't consider direction or weight
 
     for gene in gene_deg:
-        if abs(gene_deg[gene]) > 5:
+        if abs(gene_deg[gene]) > 2:
             neighbours = get_gene_directed_neighbours(gene)
             neighbour_genes, neighbour_rel = neighbours['V2'], neighbours['V3']
             network.add_edges_from((gene, n) for n in neighbour_genes)
