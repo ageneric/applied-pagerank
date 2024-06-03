@@ -2,10 +2,15 @@
 library("GEOquery")
 
 # (this line downloads GPL96.soft.gz, only needs to run once; move this file to data/)
-gpl96 <- getGEO('GPL96', destdir=".")
+# gpl96 <- getGEO('GPL96', destdir=".")
 
-# Reading whole TRN into table
+# Reading entire TRN information into table
 TRRUST <- read.csv("data/trrust_rawdata.human.tsv", sep = "\t", header=FALSE)
+
+# Reading STRING database of proteins into table, for weighting edges
+# Also reading STRING translation 'table' for proteins
+STRING <- read.csv("data/9606.protein.links.v12.0.txt.gz", sep = " ", header=TRUE)
+STRINGtrans <- read.csv("data/9606.protein.info.v12.0.txt.gz", sep = "\t", header=TRUE)
 
 # Reading series matrix .txt file into ExpressionSet object:
 gse_3268 <- getGEO(filename="data/GSE3268_series_matrix.txt.gz")
