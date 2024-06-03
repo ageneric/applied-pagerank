@@ -45,8 +45,11 @@ def get_gene_differential_expressions():
     return ret
 
 
-def get_gene_directed_neighbours(gene_name):
-    return trrust[trrust['V1'] == gene_name]
+def get_gene_directed_neighbours(gene_name, filtered_gene_deg):
+    return trrust[(trrust['V1'] == gene_name) & (trrust['V2'].isin(filtered_gene_deg))]
+
+#def get_gene_directed_neighbours(gene_name):
+#    return trrust[trrust['V1'] == gene_name]
 
 
 if __name__ == '__main__':
@@ -57,11 +60,13 @@ if __name__ == '__main__':
     # genes with greatest differential expression (and their connections)
     # and doesn't consider direction or weight
 
-    for gene in gene_deg:
-        if abs(gene_deg[gene]) > 2:
-            neighbours = get_gene_directed_neighbours(gene)
-            neighbour_genes, neighbour_rel = neighbours['V2'], neighbours['V3']
-            network.add_edges_from((gene, n) for n in neighbour_genes)
+    # Change parameter in inequality for different threshold value
+    filtered_gene_deg = list(filter(lambda x: abs(gene_deg[x]) > 2, gene_deg))
+
+    for gene in filtered_gene_deg:
+        neighbours = get_gene_directed_neighbours(gene, filtered_gene_deg)
+        neighbour_genes, neighbour_rel = neighbours['V2'], neighbours['V3']
+        network.add_edges_from((gene, n) for n in neighbour_genes)
 
     nx.draw(network, with_labels=True)
     plt.show()
