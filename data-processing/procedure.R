@@ -1,8 +1,8 @@
 # Step-by-step instructions (after installing Bioconductor and GEOquery):
 library("GEOquery")
 
-# (this line downloads GPL96.soft.gz, only needs to run once; move this file to data/)
-# gpl96 <- getGEO('GPL96', destdir=".")
+# (this line downloads GPL96.soft.gz, only needs to run once)
+# gpl96 <- getGEO('GPL96', destdir="data/")
 
 # Reading entire TRN information into table
 TRRUST <- read.csv("data/trrust_rawdata.human.tsv", sep = "\t", header=FALSE)
@@ -58,7 +58,7 @@ t_repeats <- length(unique(names(rmeans_texpr))) - length(names(rmeans_texpr))
 cat("Number of repeats (N, T):", n_repeats, t_repeats)
 
 
-# Translate name to name that would match TRRUST data
+# Translate GEO ID to name that would match standard as in TRRUST
 # Ref: https://warwick.ac.uk/fac/sci/moac/people/students/peter_cock/r/geo/
 gene_symbol_table <- Table(gpl96)[c("ID","Gene Symbol")]
 ids <- gene_symbol_table[["ID"]]
@@ -67,9 +67,17 @@ id_symbol_map <- setNames(symbols, ids)
 
 expression_df$gene = id_symbol_map[as.character(rownames(expression_df))]
 
+# Translate STRING ID to name that would match standard as in TRRUST
+ids <- STRINGtrans$X.string_protein_id
+symbols <- STRINGtrans$preferred_name
+STRING_symbol_map <- setNames(symbols, ids)
+
+STRING$gene1 = STRING_symbol_map[STRING$protein1]
+STRING$gene2 = STRING_symbol_map[STRING$protein2]
 
 # For convenience, to process the expression values for duplicate genes,
 # and to take care of paired up genes by splitting on ///,
 # we now dump everything to .csv files for processing in Python ~ Kevin
 write.csv(TRRUST, "network-data/TRRUST.csv")
 write.csv(expression_df, "network-data/expressions.csv")
+write.csv(STRING, "network-data/STRING_by_gene.csv")
