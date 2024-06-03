@@ -48,19 +48,14 @@ def get_gene_differential_expressions():
 def get_gene_directed_neighbours(gene_name, checkdict):
     return trrust[(trrust['V1'] == gene_name) & (trrust['V2'].isin(checkdict))]
 
-#def get_gene_directed_neighbours(gene_name):
-#    return trrust[trrust['V1'] == gene_name]
-
 
 if __name__ == '__main__':
     network = nx.DiGraph()
     gene_deg = get_gene_differential_expressions()
 
-    # TODO: generate graph directions and weights. This code draws the few
-    # genes with greatest differential expression (and their connections)
-    # and doesn't consider direction or weight
+    # TODO: Generate graph weights.
 
-    threshold = 2
+    threshold = 1.5
     filtered_list = list(filter(lambda x: abs(gene_deg[x]) > threshold, gene_deg))
 
     for gene in filtered_list:
