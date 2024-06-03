@@ -54,17 +54,21 @@ def get_gene_directed_neighbours(gene_name, checkdict):
     return trrust[(trrust['V1'] == gene_name) & (trrust['V2'].isin(checkdict))]
 
 
-def GM(a, b):
-    return sqrt(a * b)
+def GM(gene_a, gene_b):
+    return sqrt(gene_deg[gene_a] * gene_deg[gene_b])
 
 
-def RMS(a, b):
-    return sqrt((a**2 + b**2) / 2)
+def RMS(gene_a, gene_b):
+    return sqrt((gene_deg[gene_a]**2 + gene_deg[gene_b]**2) / 2)
 
 
-def STR(a, b):
-    condition = (string_gene['gene1'] == a & string_gene['gene2'] == b)
-    return string_gene.loc[condition, 'combined_score']
+def STR(gene_a, gene_b):
+    condition = (string_gene['gene1'] == gene_a) & (string_gene['gene2'] == gene_b)
+    result = string_gene.loc[condition, 'combined_score']
+    if not result.empty:
+        return result.iloc[0] / 100  # n.b. result.iloc[0] gives you STRING score, not sure how to deal with it to make suitable weighting
+    else:
+        return RMS(gene_a, gene_b) # n.b. arbitrary rating for case where no STRING match is found
 
 
 if __name__ == '__main__':
@@ -74,12 +78,12 @@ if __name__ == '__main__':
     threshold = 2
     filtered_list = [x for x in gene_deg if abs(gene_deg[x]) > threshold]
 
-    weighting = STR
+    edge_weighting = STR
 
     for gene in filtered_list:
         neighbours = get_gene_directed_neighbours(gene, filtered_list)
         neighbour_genes, neighbour_rel = neighbours['V2'], neighbours['V3']
-        network.add_weighted_edges_from((gene, n, weighting(gene_deg[gene], gene_deg[n])) for n in neighbour_genes)
+        network.add_weighted_edges_from((gene, n, edge_weighting(gene, n)) for n in neighbour_genes)
 
     nx.draw(network, with_labels=True)
     plt.show()
