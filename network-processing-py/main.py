@@ -1,6 +1,7 @@
 import pandas as pd
 import networkx as nx
 from matplotlib import pyplot as plt
+from math import sqrt
 
 
 DATA_EXPRESSIONS = '../network-data/expressions.csv'
@@ -49,19 +50,29 @@ def get_gene_directed_neighbours(gene_name, checkdict):
     return trrust[(trrust['V1'] == gene_name) & (trrust['V2'].isin(checkdict))]
 
 
+def GM(a, b):
+    return sqrt(a * b)
+
+
+def RMS(a, b):
+    return sqrt((a**2 + b**2) / 2)
+
+# TODO: Implement the weighting method using STR
+# def strweight(a, b):
+#    return combined_score if entry in gene1 is a and entry in gene2 is b
+
+
 if __name__ == '__main__':
     network = nx.DiGraph()
     gene_deg = get_gene_differential_expressions()
 
-    # TODO: Generate graph weights.
-
-    threshold = 1.5
+    threshold = 2
     filtered_list = list(filter(lambda x: abs(gene_deg[x]) > threshold, gene_deg))
 
     for gene in filtered_list:
         neighbours = get_gene_directed_neighbours(gene, filtered_list)
         neighbour_genes, neighbour_rel = neighbours['V2'], neighbours['V3']
-        network.add_edges_from((gene, n) for n in neighbour_genes)
+        network.add_weighted_edges_from((gene, n, GM(gene_deg[gene], gene_deg[n])) for n in neighbour_genes)
 
     nx.draw(network, with_labels=True)
     plt.show()
