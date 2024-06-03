@@ -61,9 +61,10 @@ def GM(a, b):
 def RMS(a, b):
     return sqrt((a**2 + b**2) / 2)
 
-# TODO: Implement the weighting method using STR
-# def strweight(a, b):
-#    return combined_score if entry in gene1 is a and entry in gene2 is b
+
+def STR(a, b):
+    condition = (string_gene['gene1'] == a & string_gene['gene2'] == b)
+    return string_gene.loc[condition, 'combined_score']
 
 
 if __name__ == '__main__':
@@ -73,7 +74,7 @@ if __name__ == '__main__':
     threshold = 2
     filtered_list = [x for x in gene_deg if abs(gene_deg[x]) > threshold]
 
-    weighting = GM
+    weighting = STR
 
     for gene in filtered_list:
         neighbours = get_gene_directed_neighbours(gene, filtered_list)
