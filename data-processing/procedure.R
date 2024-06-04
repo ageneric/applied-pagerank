@@ -5,7 +5,11 @@ library("GEOquery")
 # gpl96 <- getGEO('GPL96', destdir="data/")
 
 # Reading entire TRN information into table
-TRRUST <- read.csv("data/trrust_rawdata.human.tsv", sep = "\t", header=FALSE)
+#TRRUST <- read.csv("data/trrust_rawdata.human.tsv", sep = "\t", header=FALSE)
+
+# Download TFLink from https://tflink.net/download/ - Homo sapiens small and large-scale interaction table
+TFLink <- read.csv("data/TFLink_Homo_sapiens_interactions_All_simpleFormat_v1.0.tsv.gz", sep = "\t", header=TRUE) 
+TFLink <- TFLink[c("Name.TF", "Name.Target")]
 
 # Reading STRING database of proteins into table, for weighting edges
 # Also reading STRING translation 'table' for proteins
@@ -13,7 +17,7 @@ STRING <- read.csv("data/9606.protein.links.v12.0.txt.gz", sep = " ", header=TRU
 STRINGtrans <- read.csv("data/9606.protein.info.v12.0.txt.gz", sep = "\t", header=TRUE)
 
 # Reading series matrix .txt file into ExpressionSet object:
-gse_3268 <- getGEO(filename="data/GSE3268_series_matrix.txt.gz")
+gse_15852 <- getGEO(filename="data/GSE15852_series_matrix.txt.gz")
 
 # Reading GPL file, used to map GEO gene identifiers to actual gene names:
 gpl96 <- getGEO(filename='data/GPL96.soft.gz')
@@ -25,14 +29,14 @@ gpl96 <- getGEO(filename='data/GPL96.soft.gz')
 
 # The procedure to get a matrix of data ordered according to tissue category is shown below.
 # Extract expression data and phenotype data
-exprs_3268 <- exprs(gse_3268)
-pheno_3268 <- pData(gse_3268)
+exprs_15852 <- exprs(gse_15852)
+pheno_15852 <- pData(gse_15852)
 
 # Merge the expression data with phenotype data, so that we know which samples are from tumour tissue and which aren't.
-merged_3268 <- data.frame(exprs_3268)
-merged_3268["TissueType", ] <- pheno_3268[["description"]]
-merged_3268 <- merged_3268[c(nrow(merged_3268), 1:(nrow(merged_3268)-1)), ]
-type_3268 <- merged_3268["TissueType", ]
+merged_15852 <- data.frame(exprs_15852)
+merged_15852["TissueType", ] <- pheno_15852[["description"]]
+merged_15852 <- merged_15852[c(nrow(merged_15852), 1:(nrow(merged_15852)-1)), ]
+type_15852 <- merged_15852["TissueType", ]
 # N.B. 'description' name is used because that is what the authors named it in this dataset.
 
 # Calculating the mean expression values for normal vs tumour tissue
@@ -42,8 +46,8 @@ row_means_by_tissue <- function(data, tissue_types, tissue_type) {
   rowMeans(selected_data)
 }
 
-rmeans_nexpr <- row_means_by_tissue(exprs_3268, type_3268, "Normal cells")
-rmeans_texpr <- row_means_by_tissue(exprs_3268, type_3268, "Tumor cells")
+rmeans_nexpr <- row_means_by_tissue(exprs_15852, type_15852, "gene expression data from normal breast tissue")
+rmeans_texpr <- row_means_by_tissue(exprs_15852, type_15852, "gene expression data from breast tumor")
 
 # ~ Winner
 
@@ -69,7 +73,7 @@ expression_df$gene = id_symbol_map[as.character(rownames(expression_df))]
 
 # Rename TRRUST columns
 # https://pubmed.ncbi.nlm.nih.gov/29087512/#&gid=article-figures&pid=figure-3-uid-2
-colnames(TRRUST) <- c("name1","name2","mode","references")
+#colnames(TRRUST) <- c("name1","name2","mode","references")
 
 # Translate STRING ID to name that would match standard as in TRRUST
 ids <- STRINGtrans$X.string_protein_id
@@ -85,6 +89,7 @@ STRING <- STRING[c('name1', 'name2', 'combined_score')]
 # For convenience, to process the expression values for duplicate genes,
 # and to take care of paired up genes by splitting on ///,
 # we now dump everything to .csv files for processing in Python ~ Kevin
-write.csv(TRRUST, "network-data/TRRUST.csv")
+#write.csv(TRRUST, "network-data/TRRUST.csv")
+write.csv(TFLink, "network-data/TFLink.csv")
 write.csv(expression_df, "network-data/expressions.csv")
 write.csv(STRING, "network-data/STRING_by_gene.csv")
