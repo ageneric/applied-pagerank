@@ -20,7 +20,7 @@ if __name__ == '__main__':
     for gene in filtered_list:
         neighbours = get_gene_directed_neighbours(gene, filtered_list)
         neighbour_genes, neighbour_rel = neighbours['V2'], neighbours['V3']
-        network.add_weighted_edges_from((n, gene, weighting(gene_deg[gene], gene_deg[n])) for n in neighbour_genes)
+        network.add_weighted_edges_from((n, gene, weighting(n, gene, gene_deg)) for n in neighbour_genes)
 
     # Create stochastic matrix, manual method
     node_count = network.number_of_nodes()

@@ -54,15 +54,15 @@ def get_gene_directed_neighbours(gene_name, checkdict):
     return trrust[(trrust['V1'] == gene_name) & (trrust['V2'].isin(checkdict))]
 
 
-def GM(gene_a, gene_b):
+def GM(gene_a, gene_b, gene_deg):
     return sqrt(gene_deg[gene_a] * gene_deg[gene_b])
 
 
-def RMS(gene_a, gene_b):
+def RMS(gene_a, gene_b, gene_deg):
     return sqrt((gene_deg[gene_a]**2 + gene_deg[gene_b]**2) / 2)
 
 
-def STR(gene_a, gene_b):
+def STRING(gene_a, gene_b, gene_deg):
     condition = (string_gene['gene1'] == gene_a) & (string_gene['gene2'] == gene_b)
     result = string_gene.loc[condition, 'combined_score']
     if not result.empty:
@@ -78,12 +78,12 @@ if __name__ == '__main__':
     threshold = 2
     filtered_list = [x for x in gene_deg if abs(gene_deg[x]) > threshold]
 
-    edge_weighting = STR
+    edge_weighting = STRING
 
     for gene in filtered_list:
         neighbours = get_gene_directed_neighbours(gene, filtered_list)
         neighbour_genes, neighbour_rel = neighbours['V2'], neighbours['V3']
-        network.add_weighted_edges_from((n, gene, edge_weighting(gene, n)) for n in neighbour_genes)
+        network.add_weighted_edges_from((n, gene, edge_weighting(n, gene, gene_deg)) for n in neighbour_genes)
 
     nx.draw(network, with_labels=True)
     plt.show()
