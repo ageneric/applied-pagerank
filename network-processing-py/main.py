@@ -83,7 +83,7 @@ if __name__ == '__main__':
     for gene in filtered_list:
         neighbours = get_gene_directed_neighbours(gene, filtered_list)
         neighbour_genes, neighbour_rel = neighbours['V2'], neighbours['V3']
-        network.add_weighted_edges_from((gene, n, edge_weighting(gene, n)) for n in neighbour_genes)
+        network.add_weighted_edges_from((n, gene, edge_weighting(gene, n)) for n in neighbour_genes)
 
     nx.draw(network, with_labels=True)
     plt.show()
