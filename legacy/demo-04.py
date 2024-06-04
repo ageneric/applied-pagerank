@@ -2,7 +2,7 @@ import networkx as nx
 import numpy as np
 from matplotlib import pyplot as plt
 from main import get_gene_differential_expressions, \
-    get_gene_directed_neighbours, GM
+    get_gene_directed_neighbours, STRING
 from pagerank import linear_pagerank, draw
 
 
@@ -15,7 +15,7 @@ if __name__ == '__main__':
 
     # draw(network)
 
-    weighting = GM
+    weighting = STRING
 
     for gene in filtered_list:
         neighbours = get_gene_directed_neighbours(gene, filtered_list)
@@ -43,6 +43,8 @@ if __name__ == '__main__':
 
     genes = [(item[0], item[1]) for item in zip(network.nodes, pagerank)]
     top_genes = sorted(genes, key=lambda x: -x[1])
+    gene_names = [data[0] for data in top_genes]
+
     """
     nx.draw(network, with_labels=True, node_size=pagerank * 10000)
     plt.show()
