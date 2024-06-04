@@ -67,13 +67,20 @@ id_symbol_map <- setNames(symbols, ids)
 
 expression_df$gene = id_symbol_map[as.character(rownames(expression_df))]
 
+# Rename TRRUST columns
+# https://pubmed.ncbi.nlm.nih.gov/29087512/#&gid=article-figures&pid=figure-3-uid-2
+colnames(TRRUST) <- c("name1","name2","mode","references")
+
 # Translate STRING ID to name that would match standard as in TRRUST
 ids <- STRINGtrans$X.string_protein_id
 symbols <- STRINGtrans$preferred_name
 STRING_symbol_map <- setNames(symbols, ids)
 
-STRING$gene1 = STRING_symbol_map[STRING$protein1]
-STRING$gene2 = STRING_symbol_map[STRING$protein2]
+# To save memory, drop the STRING IDs from the database
+STRING$name1 = STRING_symbol_map[STRING$protein1]
+STRING$name2 = STRING_symbol_map[STRING$protein2]
+
+STRING <- STRING[c('name1', 'name2', 'combined_score')]
 
 # For convenience, to process the expression values for duplicate genes,
 # and to take care of paired up genes by splitting on ///,

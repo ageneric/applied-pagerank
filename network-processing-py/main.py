@@ -1,89 +1,51 @@
 import pandas as pd
 import networkx as nx
 from matplotlib import pyplot as plt
-from math import sqrt
+
+from gene_data import get_gene_differential_expressions
+from weighting import WeightMethod, expressions, trrust, get_STRING_subset
+from pagerank import linear_pagerank
 
 
-DATA_EXPRESSIONS = '../network-data/expressions.csv'
-DATA_TRRUST = '../network-data/TRRUST.csv'
-DATA_STRING = '../network-data/STRING_by_gene.csv'
-
-with open(DATA_EXPRESSIONS, 'r') as f_expressions:
-    expressions = pd.read_csv(f_expressions)
-
-with open(DATA_TRRUST, 'r') as f_trrust:
-    trrust = pd.read_csv(f_trrust)
-
-with open(DATA_STRING, 'r') as f_string_gene:
-    string_gene = pd.read_csv(f_string_gene)
-
-
-def get_gene_differential_expressions():
-    gene_deg_totals = {}  # differentially expressed genes
-
-    # group together and process the expression values by gene
-    # iterrows() is slow, but we will only iterate over ~20000 samples
-    for row in expressions.iterrows():
-        row = row[1]
-        if str(row['gene']) == 'nan':
-            continue
-
-        if '///' in row['gene']:
-            genes = row['gene'].split(' /// ')
-        else:
-            genes = [row['gene']]
-
-        for gene in genes:
-            if gene in gene_deg_totals:
-                # we want to compute the mean of all gene
-                gene_deg_totals[gene][0] += 1
-                gene_deg_totals[gene][1] += row['rmeans_texpr'] - row['rmeans_nexpr']
-            else:
-                gene_deg_totals[gene] = [1, row['rmeans_texpr'] - row['rmeans_nexpr']]
-
-    # compute the difference of the averages by dividing by the count
-    ret = {}
-    for key, value in gene_deg_totals.items():
-        count, expression_difference_total = value
-        ret[key] = abs(expression_difference_total / count)
-
-    return ret
-
-
-def get_gene_directed_neighbours(gene_name, checkdict):
-    return trrust[(trrust['V1'] == gene_name) & (trrust['V2'].isin(checkdict))]
-
-
-def GM(gene_a, gene_b, gene_deg):
-    return sqrt(gene_deg[gene_a] * gene_deg[gene_b])
-
-
-def RMS(gene_a, gene_b, gene_deg):
-    return sqrt((gene_deg[gene_a]**2 + gene_deg[gene_b]**2) / 2)
-
-
-def STRING(gene_a, gene_b, gene_deg):
-    condition = (string_gene['gene1'] == gene_a) & (string_gene['gene2'] == gene_b)
-    result = string_gene.loc[condition, 'combined_score']
-    if not result.empty:
-        return result.iloc[0] / 100  # n.b. result.iloc[0] gives you STRING score, not sure how to deal with it to make suitable weighting
-    else:
-        return RMS(gene_a, gene_b) # n.b. arbitrary rating for case where no STRING match is found
+def get_gene_directed_neighbours(gene_name, includes):
+    return trrust[(trrust['name1'] == gene_name) & (trrust['name2'].isin(includes))]
 
 
 if __name__ == '__main__':
+    print('Imported modules.')
+
     network = nx.DiGraph()
-    gene_deg = get_gene_differential_expressions()
+    gene_deg = get_gene_differential_expressions(expressions)
+    filter_list = [g for (g, differential) in gene_deg.items() if abs(differential) > 0.0001]
+    string_df = get_STRING_subset(filter_list)
+    weighting = WeightMethod(gene_deg, string_df).RMS
+    print('Imported weightings.')
 
-    threshold = 2
-    filtered_list = [x for x in gene_deg if abs(gene_deg[x]) > threshold]
+    for i, gene in enumerate(filter_list):
+        neighbours = get_gene_directed_neighbours(gene, filter_list)
+        neighbour_genes = neighbours['name2']
+        network.add_weighted_edges_from((n_gene, gene, weighting(n_gene, gene))
+                                        for n_gene in neighbour_genes)
+        if i % 1000 == 999:
+            print(f'Generating NetworkX graph: {i} complete')
+    print('Generated NetworkX graph.')
 
-    edge_weighting = STRING
+    stochastic_network = nx.stochastic_graph(network)
 
-    for gene in filtered_list:
-        neighbours = get_gene_directed_neighbours(gene, filtered_list)
-        neighbour_genes, neighbour_rel = neighbours['V2'], neighbours['V3']
-        network.add_weighted_edges_from((n, gene, edge_weighting(n, gene, gene_deg)) for n in neighbour_genes)
+    matrix_P = nx.adjacency_matrix(stochastic_network, stochastic_network.nodes,
+                                   weight='weight').todense()
 
-    nx.draw(network, with_labels=True)
+    pagerank = linear_pagerank(matrix_P)
+
+    genes = [(item[0], item[1]) for item in zip(network.nodes, pagerank)]
+    top_genes = sorted(genes, key=lambda x: -x[1])
+    gene_names = [data[0] for data in top_genes]
+
+    print('Computed PageRank list.')
+
+    # Visualise 'top 50' genes
+    view_network = nx.subgraph(network, gene_names[:50])
+    nx.draw(view_network, with_labels=True)
     plt.show()
+
+
