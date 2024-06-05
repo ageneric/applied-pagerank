@@ -10,6 +10,7 @@ library("GEOquery")
 # Download TFLink from https://tflink.net/download/ - Homo sapiens small and large-scale interaction table
 TFLink <- read.csv("data/TFLink_Homo_sapiens_interactions_All_simpleFormat_v1.0.tsv.gz", sep = "\t", header=TRUE) 
 TFLink <- TFLink[c("Name.TF", "Name.Target")]
+colnames(TFLink) <- c("TF", "Target")
 
 # Reading STRING database of proteins into table, for weighting edges
 # Also reading STRING translation 'table' for proteins
@@ -84,7 +85,7 @@ STRING_symbol_map <- setNames(symbols, ids)
 STRING$name1 = STRING_symbol_map[STRING$protein1]
 STRING$name2 = STRING_symbol_map[STRING$protein2]
 
-STRING <- STRING[c('name1', 'name2', 'combined_score')]
+STRING <- STRING[c('TF', 'Target', 'combined_score')]
 
 # For convenience, to process the expression values for duplicate genes,
 # and to take care of paired up genes by splitting on ///,
