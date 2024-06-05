@@ -5,10 +5,15 @@ from matplotlib import pyplot as plt
 from gene_data import get_gene_differential_expressions
 from weighting import WeightMethod, expressions, trrust, get_STRING_subset
 from pagerank import linear_pagerank
+from graphic import draw_network_pagerank
 
 
 def get_gene_directed_neighbours(gene_name, includes):
     return trrust[(trrust['name1'] == gene_name) & (trrust['name2'].isin(includes))]
+
+def write_to_graphml():
+    import pathlib
+    nx.write_graphml(network, pathlib.Path.cwd() / 'graph.graphml')
 
 
 if __name__ == '__main__':
@@ -36,16 +41,16 @@ if __name__ == '__main__':
                                    weight='weight').todense()
 
     pagerank = linear_pagerank(matrix_P)
+    pagerank_dict = {k: v for k, v in zip(network.nodes, pagerank)}
+    nx.set_node_attributes(network, pagerank_dict, name='pagerank')
 
     genes = [(item[0], item[1]) for item in zip(network.nodes, pagerank)]
     top_genes = sorted(genes, key=lambda x: -x[1])
-    gene_names = [data[0] for data in top_genes]
-
+    top_gene_names = [data[0] for data in top_genes]
+    top_pageranks = [data[1] for data in top_genes]
     print('Computed PageRank list.')
 
     # Visualise 'top 50' genes
-    view_network = nx.subgraph(network, gene_names[:50])
-    nx.draw(view_network, with_labels=True)
+    draw_network_pagerank(network, top_gene_names, top_pageranks)
     plt.show()
-
 
