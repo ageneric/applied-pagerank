@@ -12,7 +12,7 @@ from graphic import draw_network_pagerank
 # filter for the top differentially expressed genes
 # 6.9 = keep top ~90%. 14.6 = keep top ~80%.
 # don't recommend dropping more than 20% as TP53 (important) has low expression
-THRESHOLD_DEG = 14.6
+THRESHOLD_DEG = -1
 
 def write_to_graphml():
     import pathlib
@@ -49,6 +49,7 @@ Weighting method                           {weighting.__name__}''')
     # out-links and iterate through them. This is faster than enumerating
     # through all genes by a significant margin.
     genes_with_out_links = df[TF].unique()
+    num_genes_with_out_links = len(genes_with_out_links)
 
     for i, gene in enumerate(genes_with_out_links):
         neighbours = df[df[TF] == gene]
@@ -57,16 +58,19 @@ Weighting method                           {weighting.__name__}''')
             print(i, end=' ')
             network.add_weighted_edges_from((neighbour, gene, weight) for neighbour, weight in zip(neighbours[TARGET], weights))
             print(gene)
-        if i % 1000 == 999:
-            print(f'Generating NetworkX graph: {i} complete')
+        if i % 100 == 99:
+            print(f'Generating NetworkX graph: {round(i/num_genes_with_out_links, 3) * 100}% complete')
     print('Generated NetworkX graph.')
 
     stochastic_network = nx.stochastic_graph(network)
 
     matrix_P = nx.adjacency_matrix(stochastic_network, stochastic_network.nodes,
                                    weight='weight').todense()
+    print('Formulated matrix problem.')
 
     pagerank = linear_pagerank(matrix_P)
+    print('Computed PageRanks.')
+
     pagerank_dict = {k: v for k, v in zip(network.nodes, pagerank)}
     nx.set_node_attributes(network, pagerank_dict, name='pagerank')
 
@@ -74,9 +78,8 @@ Weighting method                           {weighting.__name__}''')
     top_genes = sorted(genes, key=lambda x: -x[1])
     top_gene_names = [data[0] for data in top_genes]
     top_pageranks = [data[1] for data in top_genes]
-    print('Computed PageRank list.')
 
     # Visualise 'top 50' genes
-    draw_network_pagerank(network, top_gene_names, top_pageranks)
+    draw_network_pagerank(network, pagerank_dict, top_gene_names, top_pageranks)
     plt.show()
 
