@@ -73,9 +73,8 @@ class WeightVectorMethod:
         return np.sqrt((self.deg[gene]**2 + neighbour_expressions**2) / 2)
 
     def STRING(self, gene, neighbours):
-        condition = ((self.df[TF] == gene)
-                     & (self.df[TARGET].isin(neighbours)))
-        result = self.STRING_gene_data.loc[condition, 'combined_score']
+        condition = (self.df[TF] == gene)
+        result = self.df.loc[condition, 'combined_score']
         if not result.empty:
             # n.b. result.iloc[0] gives you STRING score in thousandths
             return result / 1000
