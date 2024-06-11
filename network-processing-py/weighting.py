@@ -64,17 +64,17 @@ class WeightMethod:
 class WeightVectorMethod:
     DEFAULT_WEIGHT_NO_STRING = 0.1
 
-    def __init__(self, deg, STRING_gene_data):
+    def __init__(self, deg, df):
         self.deg = deg
-        self.STRING_gene_data = STRING_gene_data
+        self.df = df
 
     def RMS(self, gene, neighbours):
         neighbour_expressions = np.array([self.deg[n] for n in neighbours['Target']])
         return np.sqrt((self.deg[gene]**2 + neighbour_expressions**2) / 2)
 
     def STRING(self, gene, neighbours):
-        condition = ((self.STRING_gene_data[TF] == gene)
-                     & (self.STRING_gene_data[TARGET].isin((neighbours))))
+        condition = ((self.df[TF] == gene)
+                     & (self.df[TARGET].isin(neighbours)))
         result = self.STRING_gene_data.loc[condition, 'combined_score']
         if not result.empty:
             # n.b. result.iloc[0] gives you STRING score in thousandths

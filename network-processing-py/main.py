@@ -24,16 +24,17 @@ if __name__ == '__main__':
     string_df = get_STRING_subset(filter_list)
     print('Imported datasets.')
 
-    weighting = WeightVectorMethod(gene_deg, string_df).product_STRING
     df = tflink_df.merge(string_df, on=(TARGET, TF))
-    print('Computed weightings.')
+    weighting = WeightVectorMethod(gene_deg, df).product_STRING
+    print('Merged datasets.')
 
     for i, gene in enumerate(filter_list):
         neighbours = df.loc[(df[TF] == gene), (TARGET, 'combined_score')]
         if not neighbours.empty:
             weights = weighting(gene, neighbours)
+            print(i)
             network.add_weighted_edges_from((neighbour, gene, weight) for neighbour, weight in zip(neighbours[TARGET], weights))
-            print(gene)
+            print(i, gene)
         if i % 1000 == 999:
             print(f'Generating NetworkX graph: {i} complete')
     print('Generated NetworkX graph.')
