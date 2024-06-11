@@ -26,10 +26,10 @@ def read_dataframe_subset(path, filter_list):
                        & complete_df[TARGET].isin(filter_list)]
 
 def get_TFLink_subset(filter_list):
-    return read_dataframe_subset(DATA_TFLINK, filter_list)
+    return read_dataframe_subset(DATA_TFLINK, filter_list)[['TF', 'Target']]
 
 def get_STRING_subset(filter_list):
-    return read_dataframe_subset(DATA_STRING, filter_list)
+    return read_dataframe_subset(DATA_STRING, filter_list)[['TF', 'Target', 'combined_score']]
 
 
 class WeightMethod:
@@ -37,7 +37,7 @@ class WeightMethod:
 
     def __init__(self, deg, STRING_gene_data):
         self.deg = deg
-        self.STRING_gene_data = STRING_gene_data
+        self.df = STRING_gene_data
 
     def GM(self, gene_a, gene_b):
         return sqrt(self.deg[gene_a] * self.deg[gene_b])
@@ -46,9 +46,9 @@ class WeightMethod:
         return sqrt((self.deg[gene_a]**2 + self.deg[gene_b]**2) / 2)
 
     def STRING(self, gene_a, gene_b):
-        condition = ((self.STRING_gene_data['gene1'] == gene_a)
-                     & (self.STRING_gene_data['gene2'] == gene_b))
-        result = self.STRING_gene_data.loc[condition, 'combined_score']
+        condition = ((self.df['gene1'] == gene_a)
+                     & (self.df['gene2'] == gene_b))
+        result = self.df.loc[condition, 'combined_score']
         if not result.empty:
             # n.b. result.iloc[0] gives you STRING score in thousandths
             return result.iloc[0] / 1000
@@ -61,16 +61,12 @@ class WeightMethod:
         return self.RMS(gene_a, gene_b) * self.STRING(gene_a, gene_b)
 
 
-class WeightVectorMethod:
+class WeightVectorMethod(WeightMethod):
     DEFAULT_WEIGHT_NO_STRING = 0.1
 
-    def __init__(self, deg, df):
-        self.deg = deg
-        self.df = df
-
     def RMS(self, gene, neighbours):
-        neighbour_expressions = np.array([self.deg[n] for n in neighbours['Target']])
-        return np.sqrt((self.deg[gene]**2 + neighbour_expressions**2) / 2)
+        neighbour_expressions = np.array([self.deg[n] for n in neighbours[TARGET]])
+        return np.sqrt((self.deg[gene]**2 + neighbour_expressions**2) / (len(neighbours) + 1))
 
     def STRING(self, gene, neighbours):
         condition = (self.df[TF] == gene)

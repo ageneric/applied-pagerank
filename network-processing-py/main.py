@@ -9,6 +9,11 @@ from pagerank import linear_pagerank
 from graphic import draw_network_pagerank
 
 
+# filter for the top differentially expressed genes
+# 6.9 = keep top ~90%. 14.6 = keep top ~80%.
+# don't recommend dropping more than 20% as TP53 (important) has low expression
+THRESHOLD_DEG = 14.6
+
 def write_to_graphml():
     import pathlib
     nx.write_graphml(network, pathlib.Path.cwd() / 'graph.graphml')
@@ -17,24 +22,39 @@ def write_to_graphml():
 if __name__ == '__main__':
     print('Imported modules.')
 
-    network = nx.DiGraph()
     gene_deg = get_gene_differential_expressions(expressions)
-    filter_list = [g for (g, differential) in gene_deg.items() if abs(differential) > 0.0001]
+    filter_list = [g for (g, differential) in gene_deg.items()
+                   if abs(differential) > THRESHOLD_DEG]
     tflink_df = get_TFLink_subset(filter_list)
     string_df = get_STRING_subset(filter_list)
     print('Imported datasets.')
 
     df = tflink_df.merge(string_df, on=(TARGET, TF))
-    weighting = WeightVectorMethod(gene_deg, df).product_STRING
+    weighting = WeightVectorMethod(gene_deg, df).STRING
     print('Merged datasets.')
 
+    print(f'''Genes with known expressions               {len(gene_deg)}
+Genes passing threshold expression         {len(filter_list)}
+ -- and their interactions in TFLink       {len(tflink_df)}
+ -- and their interactions in STRING       {len(string_df)}
+Interactions in TFLink + STRING merged     {len(df)}
+Weighting method                           {weighting.__name__}''')
+
+    # Free up memory from the separate datasets
+    del tflink_df
+    del string_df
+    network = nx.DiGraph()
+
+    # Since few genes
+
     for i, gene in enumerate(filter_list):
-        neighbours = df.loc[(df[TF] == gene), (TARGET, 'combined_score')]
+        neighbours = df[df[TF] == gene]
         if not neighbours.empty:
+            print(end=':')
             weights = weighting(gene, neighbours)
-            print(i)
+            print(i, end=' ')
             network.add_weighted_edges_from((neighbour, gene, weight) for neighbour, weight in zip(neighbours[TARGET], weights))
-            print(i, gene)
+            print(gene)
         if i % 1000 == 999:
             print(f'Generating NetworkX graph: {i} complete')
     print('Generated NetworkX graph.')
