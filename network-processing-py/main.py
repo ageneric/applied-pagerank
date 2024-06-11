@@ -45,12 +45,14 @@ Weighting method                           {weighting.__name__}''')
     del string_df
     network = nx.DiGraph()
 
-    # Since few genes
+    # Since few genes have out-links, we filter down to only the genes with
+    # out-links and iterate through them. This is faster than enumerating
+    # through all genes by a significant margin.
+    genes_with_out_links = df[TF].unique()
 
-    for i, gene in enumerate(filter_list):
+    for i, gene in enumerate(genes_with_out_links):
         neighbours = df[df[TF] == gene]
         if not neighbours.empty:
-            print(end=':')
             weights = weighting(gene, neighbours)
             print(i, end=' ')
             network.add_weighted_edges_from((neighbour, gene, weight) for neighbour, weight in zip(neighbours[TARGET], weights))
