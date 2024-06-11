@@ -51,10 +51,3 @@ def linear_pagerank(P, v=None, alpha=0.85):
 
     # Normalise using the 1-norm as standard
     return ret / np.linalg.norm(ret, 1)
-
-
-def draw(P):
-    from matplotlib import pyplot as plt
-    G = nx.DiGraph(P)
-    nx.draw(G, with_labels=True)
-    plt.show()

@@ -161,3 +161,10 @@ cython_debug/
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
 #.idea/
 .Rproj.user
+
+# Ignore certain large files and R files
+data/TFLink_Homo_sapiens_interactions_All_simpleFormat_v1.0.tsv.gz
+network-data/STRING_by_gene.csv
+network-data/TFLink.csv
+output/graph.graphml
+.Rhistory

@@ -14,9 +14,30 @@ from graphic import draw_network_pagerank
 # don't recommend dropping more than 20% as TP53 (important) has low expression
 THRESHOLD_DEG = -1
 
+
 def write_to_graphml():
     import pathlib
     nx.write_graphml(network, pathlib.Path.cwd() / 'graph.graphml')
+
+def generate_networkx_graph(_df, _weighting):
+    network = nx.DiGraph()
+
+    # Since few genes have out-links, we filter down to only the genes with
+    # out-links and iterate through them. This is faster than enumerating
+    # through all genes by a significant margin.
+    genes_with_out_links = _df[TF].unique()
+    num_genes_with_out_links = len(genes_with_out_links)
+
+    for i, gene in enumerate(genes_with_out_links):
+        neighbours = _df[_df[TF] == gene]
+        if not neighbours.empty:
+            weights = _weighting(gene, neighbours)
+            network.add_weighted_edges_from((neighbour, gene, weight)
+                                            for neighbour, weight in zip(neighbours[TARGET], weights))
+        if i % 100 == 99:
+            print(f'Generating NetworkX graph: {i/num_genes_with_out_links:.2%} complete')
+
+    return network
 
 
 if __name__ == '__main__':
@@ -30,7 +51,7 @@ if __name__ == '__main__':
     print('Imported datasets.')
 
     df = tflink_df.merge(string_df, on=(TARGET, TF))
-    weighting = WeightVectorMethod(gene_deg, df).STRING
+    weighting = WeightVectorMethod(gene_deg, df).product_STRING
     print('Merged datasets.')
 
     print(f'''Genes with known expressions               {len(gene_deg)}
@@ -43,23 +64,8 @@ Weighting method                           {weighting.__name__}''')
     # Free up memory from the separate datasets
     del tflink_df
     del string_df
-    network = nx.DiGraph()
 
-    # Since few genes have out-links, we filter down to only the genes with
-    # out-links and iterate through them. This is faster than enumerating
-    # through all genes by a significant margin.
-    genes_with_out_links = df[TF].unique()
-    num_genes_with_out_links = len(genes_with_out_links)
-
-    for i, gene in enumerate(genes_with_out_links):
-        neighbours = df[df[TF] == gene]
-        if not neighbours.empty:
-            weights = weighting(gene, neighbours)
-            print(i, end=' ')
-            network.add_weighted_edges_from((neighbour, gene, weight) for neighbour, weight in zip(neighbours[TARGET], weights))
-            print(gene)
-        if i % 100 == 99:
-            print(f'Generating NetworkX graph: {round(i/num_genes_with_out_links, 3) * 100}% complete')
+    network = generate_networkx_graph(df, weighting)
     print('Generated NetworkX graph.')
 
     stochastic_network = nx.stochastic_graph(network)
