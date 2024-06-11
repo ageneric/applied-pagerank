@@ -49,7 +49,7 @@ def linear_pagerank(P, v=None, alpha=0.85):
     ret[permutation] = pi_1
     ret[counter_permutation] = pi_2
 
-    # Normalise using the 1-norm to ensure we have a probability distribution
+    # Normalise using the 1-norm as standard
     return ret / np.linalg.norm(ret, 1)
 
 

@@ -1,15 +1,13 @@
+import pandas
 import pandas as pd
 import networkx as nx
 from matplotlib import pyplot as plt
 
 from gene_data import get_gene_differential_expressions
-from weighting import WeightMethod, expressions, trrust, get_STRING_subset
+from weighting import WeightVectorMethod, expressions, get_TFLink_subset, get_STRING_subset, TF, TARGET
 from pagerank import linear_pagerank
 from graphic import draw_network_pagerank
 
-
-def get_gene_directed_neighbours(gene_name, includes):
-    return trrust[(trrust['name1'] == gene_name) & (trrust['name2'].isin(includes))]
 
 def write_to_graphml():
     import pathlib
@@ -22,15 +20,20 @@ if __name__ == '__main__':
     network = nx.DiGraph()
     gene_deg = get_gene_differential_expressions(expressions)
     filter_list = [g for (g, differential) in gene_deg.items() if abs(differential) > 0.0001]
+    tflink_df = get_TFLink_subset(filter_list)
     string_df = get_STRING_subset(filter_list)
-    weighting = WeightMethod(gene_deg, string_df).RMS
-    print('Imported weightings.')
+    print('Imported datasets.')
+
+    weighting = WeightVectorMethod(gene_deg, string_df).product_STRING
+    df = tflink_df.merge(string_df, on=(TARGET, TF))
+    print('Computed weightings.')
 
     for i, gene in enumerate(filter_list):
-        neighbours = get_gene_directed_neighbours(gene, filter_list)
-        neighbour_genes = neighbours['name2']
-        network.add_weighted_edges_from((n_gene, gene, weighting(n_gene, gene))
-                                        for n_gene in neighbour_genes)
+        neighbours = df.loc[(df[TF] == gene), (TARGET, 'combined_score')]
+        if not neighbours.empty:
+            weights = weighting(gene, neighbours)
+            network.add_weighted_edges_from((neighbour, gene, weight) for neighbour, weight in zip(neighbours[TARGET], weights))
+            print(gene)
         if i % 1000 == 999:
             print(f'Generating NetworkX graph: {i} complete')
     print('Generated NetworkX graph.')

@@ -1,25 +1,35 @@
 import pandas as pd
+import numpy as np
 from math import sqrt
 
 
 DATA_EXPRESSIONS = '../network-data/expressions.csv'
 DATA_TRRUST = '../network-data/TRRUST.csv'
+DATA_TFLINK = '../network-data/TFLink.csv'
 DATA_STRING = '../network-data/STRING_by_gene.csv'
+
+TF = 'TF'
+TARGET = 'Target'
+
 
 with open(DATA_EXPRESSIONS, 'r') as f_expressions:
     expressions = pd.read_csv(f_expressions)
 
-with open(DATA_TRRUST, 'r') as f_trrust:
-    trrust = pd.read_csv(f_trrust)
+# with open(DATA_TRRUST, 'r') as f_trrust:
+#     trrust = pd.read_csv(f_trrust)
 
+def read_dataframe_subset(path, filter_list):
+    with open(path, 'r') as f:
+        complete_df = pd.read_csv(f)
+
+    return complete_df[(complete_df[TF].isin(filter_list))
+                       & complete_df[TARGET].isin(filter_list)]
+
+def get_TFLink_subset(filter_list):
+    return read_dataframe_subset(DATA_TFLINK, filter_list)
 
 def get_STRING_subset(filter_list):
-    with open(DATA_STRING, 'r') as f_string_gene:
-        string_everything = pd.read_csv(f_string_gene)
-
-    # Prepare STRING by only keeping edges between genes in the filter list
-    return string_everything[(string_everything['name1'].isin(filter_list))
-                             & (string_everything['name2'].isin(filter_list))]
+    return read_dataframe_subset(DATA_STRING, filter_list)
 
 
 class WeightMethod:
@@ -49,3 +59,29 @@ class WeightMethod:
     def product_STRING(self, gene_a, gene_b):
         # Use STRING weight and multiply by RMS
         return self.RMS(gene_a, gene_b) * self.STRING(gene_a, gene_b)
+
+
+class WeightVectorMethod:
+    DEFAULT_WEIGHT_NO_STRING = 0.1
+
+    def __init__(self, deg, STRING_gene_data):
+        self.deg = deg
+        self.STRING_gene_data = STRING_gene_data
+
+    def RMS(self, gene, neighbours):
+        neighbour_expressions = np.array([self.deg[n] for n in neighbours['Target']])
+        return np.sqrt((self.deg[gene]**2 + neighbour_expressions**2) / 2)
+
+    def STRING(self, gene, neighbours):
+        condition = ((self.STRING_gene_data[TF] == gene)
+                     & (self.STRING_gene_data[TARGET].isin((neighbours))))
+        result = self.STRING_gene_data.loc[condition, 'combined_score']
+        if not result.empty:
+            # n.b. result.iloc[0] gives you STRING score in thousandths
+            return result / 1000
+        else:
+            # n.b. arbitrary rating for case where no STRING match is found
+            return self.DEFAULT_WEIGHT_NO_STRING
+
+    def product_STRING(self, gene, neighbours):
+        return self.RMS(gene, neighbours) * self.STRING(gene, neighbours)
