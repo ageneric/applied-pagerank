@@ -4,7 +4,8 @@ import networkx as nx
 from matplotlib import pyplot as plt
 
 from gene_data import get_gene_differential_expressions
-from weighting import WeightVectorMethod, expressions, get_TFLink_subset, get_STRING_subset, TF, TARGET
+from weighting import WeightVectorMethod, expressions, get_TRRUST_subset, \
+    get_TFLink_subset, get_STRING_subset, TF, TARGET
 from pagerank import linear_pagerank
 from graphic import draw_network_pagerank
 
@@ -46,7 +47,7 @@ if __name__ == '__main__':
     gene_deg = get_gene_differential_expressions(expressions)
     filter_list = [g for (g, differential) in gene_deg.items()
                    if abs(differential) > THRESHOLD_DEG]
-    tflink_df = get_TFLink_subset(filter_list)
+    tflink_df = get_TRRUST_subset(filter_list)
     string_df = get_STRING_subset(filter_list)
     print('Imported datasets.')
 

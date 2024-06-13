@@ -15,15 +15,15 @@ TARGET = 'Target'
 with open(DATA_EXPRESSIONS, 'r') as f_expressions:
     expressions = pd.read_csv(f_expressions)
 
-# with open(DATA_TRRUST, 'r') as f_trrust:
-#     trrust = pd.read_csv(f_trrust)
-
 def read_dataframe_subset(path, filter_list):
     with open(path, 'r') as f:
         complete_df = pd.read_csv(f)
 
     return complete_df[(complete_df[TF].isin(filter_list))
                        & complete_df[TARGET].isin(filter_list)]
+
+def get_TRRUST_subset(filter_list):
+    return read_dataframe_subset(DATA_TRRUST, filter_list)[['TF', 'Target']]
 
 def get_TFLink_subset(filter_list):
     return read_dataframe_subset(DATA_TFLINK, filter_list)[['TF', 'Target']]
