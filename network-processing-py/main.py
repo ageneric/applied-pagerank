@@ -52,7 +52,7 @@ if __name__ == '__main__':
     print('Imported datasets.')
 
     df = tflink_df.merge(string_df, on=(TARGET, TF))
-    weighting = WeightVectorMethod(gene_deg, df).product_STRING
+    weighting = WeightVectorMethod(gene_deg, df).STRING
     print('Merged datasets.')
 
     print(f'''Genes with known expressions               {len(gene_deg)}

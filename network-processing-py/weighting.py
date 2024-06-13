@@ -56,7 +56,7 @@ class WeightMethod:
             # n.b. arbitrary rating for case where no STRING match is found
             return self.DEFAULT_WEIGHT_NO_STRING
 
-    def product_STRING(self, gene_a, gene_b):
+    def RMS_STRING(self, gene_a, gene_b):
         # Use STRING weight and multiply by RMS
         return self.RMS(gene_a, gene_b) * self.STRING(gene_a, gene_b)
 
@@ -65,8 +65,9 @@ class WeightVectorMethod(WeightMethod):
     DEFAULT_WEIGHT_NO_STRING = 0.1
 
     def RMS(self, gene, neighbours):
+        # compute RMS of each pairing of the gene with each of its neighbours
         neighbour_expressions = np.array([self.deg[n] for n in neighbours[TARGET]])
-        return np.sqrt((self.deg[gene]**2 + neighbour_expressions**2) / (len(neighbours) + 1))
+        return np.sqrt((self.deg[gene]**2 + neighbour_expressions**2) / 2)
 
     def STRING(self, gene, neighbours):
         condition = (self.df[TF] == gene)
@@ -78,5 +79,5 @@ class WeightVectorMethod(WeightMethod):
             # n.b. arbitrary rating for case where no STRING match is found
             return self.DEFAULT_WEIGHT_NO_STRING
 
-    def product_STRING(self, gene, neighbours):
+    def RMS_STRING(self, gene, neighbours):
         return self.RMS(gene, neighbours) * self.STRING(gene, neighbours)
