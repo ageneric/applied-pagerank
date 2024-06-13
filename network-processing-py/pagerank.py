@@ -29,7 +29,7 @@ def linear_pagerank(P, v=None, alpha=0.85):
     node_count = P.shape[0]
 
     # Set the default choice of v - uniform probability per outbound edge
-    if not v:
+    if v is None:
         v = np.array([1/node_count for _ in range(node_count)])
 
     P_11, P_12, v_1, v_2, non_dangling_rows = permute_dangling_rows(P, v)
@@ -51,3 +51,9 @@ def linear_pagerank(P, v=None, alpha=0.85):
 
     # Normalise using the 1-norm as standard
     return ret / np.linalg.norm(ret, 1)
+
+
+def get_personalisation_vector_by_deg(nodes, gene_deg):
+    base = np.array([min(gene_deg[node], 298.45) ** 0.75 for node in nodes])
+    v_unit_vector = base / np.linalg.norm(base, 1)
+    return v_unit_vector

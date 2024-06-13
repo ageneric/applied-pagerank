@@ -6,7 +6,7 @@ from matplotlib import pyplot as plt
 from gene_data import get_gene_differential_expressions
 from weighting import WeightVectorMethod, expressions, get_TRRUST_subset, \
     get_TFLink_subset, get_STRING_subset, TF, TARGET
-from pagerank import linear_pagerank
+from pagerank import linear_pagerank, get_personalisation_vector_by_deg
 from graphic import draw_network_pagerank
 
 
@@ -47,7 +47,7 @@ if __name__ == '__main__':
     gene_deg = get_gene_differential_expressions(expressions)
     filter_list = [g for (g, differential) in gene_deg.items()
                    if abs(differential) > THRESHOLD_DEG]
-    tflink_df = get_TRRUST_subset(filter_list)
+    tflink_df = get_TFLink_subset(filter_list)
     string_df = get_STRING_subset(filter_list)
     print('Imported datasets.')
 
@@ -70,12 +70,12 @@ Weighting method                           {weighting.__name__}''')
     print('Generated NetworkX graph.')
 
     stochastic_network = nx.stochastic_graph(network)
-
     matrix_P = nx.adjacency_matrix(stochastic_network, stochastic_network.nodes,
                                    weight='weight').todense()
     print('Formulated matrix problem.')
 
-    pagerank = linear_pagerank(matrix_P)
+    pagerank = linear_pagerank(matrix_P, alpha=0.85,
+                               v=get_personalisation_vector_by_deg(network.nodes, gene_deg))
     print('Computed PageRanks.')
 
     pagerank_dict = {k: v for k, v in zip(network.nodes, pagerank)}
