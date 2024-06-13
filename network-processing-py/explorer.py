@@ -12,6 +12,7 @@ import numpy
 import pandas as pd
 import pickle
 import networkx as nx
+import rbo
 
 from gene_data import get_gene_differential_expressions
 from weighting import WeightVectorMethod, expressions, TF, TARGET
@@ -35,7 +36,7 @@ def compute_kl_divergence(p, q):
 
 def compute_rbo(order, other_order):
     """order, other_order: lists."""
-    return 0
+    return rbo.RankingSimilarity(order, other_order).rbo()
 
 def get_pagerank_statistic(P, **kwargs):
     pagerank = linear_pagerank(P, **kwargs)
