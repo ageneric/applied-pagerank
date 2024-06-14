@@ -13,12 +13,14 @@ import pandas as pd
 import pickle
 import networkx as nx
 import rbo
+import scipy
+from itertools import combinations
 
 from gene_data import get_gene_differential_expressions
 from weighting import WeightVectorMethod, expressions, TF, TARGET
 from main import generate_networkx_graph
 from pagerank import linear_pagerank, get_personalisation_vector_by_deg
-import scipy
+
 
 def get_df():
     # df.to_csv('../output/df_TFLink_STRING.csv')
@@ -34,9 +36,23 @@ def compute_kl_divergence(p, q):
     """p, q: PageRank vectors."""
     return sum(scipy.special.rel_entr(p, q))
 
-def compute_rbo(order, other_order):
+def compute_rbo(order, other_order, k=None, p=1):
     """order, other_order: lists."""
-    return rbo.RankingSimilarity(order, other_order).rbo()
+    return rbo.RankingSimilarity(order, other_order).rbo(k, p)
+
+def compute_rbo_less_equal_prs(order, other_order, k=None, p=1):
+    """order, other_order: lists of tuples."""
+
+    # Find modal pagerank of order and other_order
+    # note: assumes pageranks are not multi-modal
+    mode1 = max([x[1] for x in order], key=[x[1] for x in order].count)
+    mode2 = max([x[1] for x in other_order], key=[x[1] for x in other_order].count)
+
+    # Remove items with modal pagerank from order and other_order
+    list1 = [x[0] for x in order if x[1] != mode1]
+    list2 = [x[0] for x in other_order if x[1] != mode2]
+    return rbo.RankingSimilarity(list1, list2).rbo(k, p)
+
 
 def get_pagerank_statistic(P, **kwargs):
     pagerank = linear_pagerank(P, **kwargs)
@@ -53,13 +69,26 @@ def get_pagerank_alpha_difference(P):
         'genes': [],
         'top_genes': []
     }
-    for alpha in 0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95, 1.0:
+    alpha_list = [0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95, 1.0]
+    for alpha in alpha_list:
         pagerank_result = get_pagerank_statistic(P, alpha=alpha)
         # note: this requires the order of pagerank_collection keys
         # and return order of pagerank statistic to be identical
-        for key, val in zip(pagerank_collection.keys(), pagerank_result):
+        for key, val in zip(['pagerank', 'pagerank_dict', 'genes', 'top_genes'],
+                            pagerank_result):
             pagerank_collection[key].append(val)
 
+    rbo, kl = [], []
+
+    for pair in combinations(range(len(alpha_list)), 2):
+
+        rbo.append(compute_rbo_less_equal_prs(pagerank_collection['top_genes'][pair[0]],
+                                              pagerank_collection['top_genes'][pair[1]]))
+        kl.append(compute_kl_divergence(pagerank_collection['pagerank'][pair[0]],
+                                        pagerank_collection['pagerank'][pair[1]]))
+
+    pagerank_collection['rbo'] = rbo
+    pagerank_collection['kl'] = kl
     return pagerank_collection
 
 
