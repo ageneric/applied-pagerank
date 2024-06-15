@@ -16,10 +16,6 @@ from graphic import draw_network_pagerank
 THRESHOLD_DEG = -1
 
 
-def write_to_graphml():
-    import pathlib
-    nx.write_graphml(network, pathlib.Path.cwd() / 'graph.graphml')
-
 def generate_networkx_graph(_df, _weighting):
     network = nx.DiGraph()
 
@@ -79,7 +75,6 @@ Weighting method                           {weighting.__name__}''')
     print('Computed PageRanks.')
 
     pagerank_dict = {k: v for k, v in zip(network.nodes, pagerank)}
-    nx.set_node_attributes(network, pagerank_dict, name='pagerank')
 
     genes = [(item[0], item[1]) for item in zip(network.nodes, pagerank)]
     top_genes = sorted(genes, key=lambda x: -x[1])

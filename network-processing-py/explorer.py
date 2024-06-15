@@ -12,14 +12,13 @@ import numpy
 import pandas as pd
 import pickle
 import networkx as nx
-import rbo
-import scipy
 from itertools import combinations
 
 from gene_data import get_gene_differential_expressions
 from weighting import WeightVectorMethod, expressions, TF, TARGET
 from main import generate_networkx_graph
 from pagerank import linear_pagerank, get_personalisation_vector_by_deg
+
 
 
 def get_df():
@@ -32,27 +31,6 @@ def get_network():
     network = pickle.load(open('../output/STRING_network.pickle', 'rb'))
     return network
 
-def compute_kl_divergence(p, q):
-    """p, q: PageRank vectors."""
-    return sum(scipy.special.rel_entr(p, q))
-
-def compute_rbo(order, other_order, k=None, p=1):
-    """order, other_order: lists."""
-    return rbo.RankingSimilarity(order, other_order).rbo(k, p)
-
-def compute_rbo_less_equal_prs(order, other_order, k=None, p=1):
-    """order, other_order: lists of tuples."""
-
-    # Find modal pagerank of order and other_order
-    # note: assumes pageranks are not multi-modal
-    mode1 = max([x[1] for x in order], key=[x[1] for x in order].count)
-    mode2 = max([x[1] for x in other_order], key=[x[1] for x in other_order].count)
-
-    # Remove items with modal pagerank from order and other_order
-    list1 = [x[0] for x in order if x[1] != mode1]
-    list2 = [x[0] for x in other_order if x[1] != mode2]
-    return rbo.RankingSimilarity(list1, list2).rbo(k, p)
-
 
 def get_pagerank_statistic(P, **kwargs):
     pagerank = linear_pagerank(P, **kwargs)
@@ -60,13 +38,11 @@ def get_pagerank_statistic(P, **kwargs):
 
     genes = [(item[0], item[1]) for item in zip(network.nodes, pagerank)]
     top_genes = sorted(genes, key=lambda x: -x[1])
-    return pagerank, pagerank_dict, genes, top_genes
+    return pagerank, pagerank_dict, top_genes
 
 def get_pagerank_alpha_difference(P):
     pagerank_collection = {
-        'pagerank': [],
         'pagerank_dict': [],
-        'genes': [],
         'top_genes': []
     }
     alpha_list = [0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95, 1.0]
@@ -109,7 +85,7 @@ if __name__ == '__main__':
     stochastic_network = nx.stochastic_graph(network)
     matrix_P = nx.adjacency_matrix(stochastic_network, stochastic_network.nodes,
                                    weight='weight').todense()
-    pagerank, pagerank_dict, genes, top_genes = get_pagerank_statistic(matrix_P,
+    pagerank, pagerank_dict, top_genes = get_pagerank_statistic(matrix_P,
                                                                        alpha=0.85,
                                                                        v=get_personalisation_vector_by_deg(network.nodes, gene_deg))
 
