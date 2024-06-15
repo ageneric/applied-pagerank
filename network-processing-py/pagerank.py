@@ -25,7 +25,7 @@ def permute_dangling_rows(P, v):
     return P_11, P_12, v_1, v_2, non_dangling_rows
 
 
-def linear_pagerank(P, v=None, alpha=0.85):
+def linear_system_pagerank(P, v=None, alpha=0.85):
     node_count = P.shape[0]
 
     # Set the default choice of v - uniform probability per outbound edge
@@ -57,3 +57,14 @@ def get_personalisation_vector_by_deg(nodes, gene_deg):
     base = np.array([min(gene_deg[node], 298.45) ** 0.75 for node in nodes])
     v_unit_vector = base / np.linalg.norm(base, 1)
     return v_unit_vector
+
+
+def format_pagerank(pagerank, network):
+    """returns: pagerank_dict, top_genes"""
+    pagerank_dict = {k: v for k, v in zip(network.nodes, pagerank)}
+
+    genes = [(item[0], item[1]) for item in zip(network.nodes, pagerank)]
+    top_genes = sorted(genes, key=lambda x: -x[1])
+    return pagerank_dict, top_genes
+
+

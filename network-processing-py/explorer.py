@@ -16,9 +16,8 @@ from itertools import combinations
 
 from gene_data import get_gene_differential_expressions
 from weighting import WeightVectorMethod, expressions, TF, TARGET
-from main import generate_networkx_graph
-from pagerank import linear_pagerank, get_personalisation_vector_by_deg
-
+from pagerank import linear_system_pagerank, format_pagerank, get_personalisation_vector_by_deg
+from measure import compute_rbo_less_equal_prs, compute_kl_divergence
 
 
 def get_df():
@@ -32,27 +31,17 @@ def get_network():
     return network
 
 
-def get_pagerank_statistic(P, **kwargs):
-    pagerank = linear_pagerank(P, **kwargs)
-    pagerank_dict = {k: v for k, v in zip(network.nodes, pagerank)}
-
-    genes = [(item[0], item[1]) for item in zip(network.nodes, pagerank)]
-    top_genes = sorted(genes, key=lambda x: -x[1])
-    return pagerank, pagerank_dict, top_genes
-
-def get_pagerank_alpha_difference(P):
+def get_pagerank_alpha_difference(P, v):
     pagerank_collection = {
-        'pagerank_dict': [],
         'top_genes': []
     }
     alpha_list = [0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95, 1.0]
     for alpha in alpha_list:
-        pagerank_result = get_pagerank_statistic(P, alpha=alpha)
+        pagerank = linear_system_pagerank(P, alpha=alpha, v=v)
+        _, top_genes = format_pagerank(pagerank, network)
         # note: this requires the order of pagerank_collection keys
         # and return order of pagerank statistic to be identical
-        for key, val in zip(['pagerank', 'pagerank_dict', 'genes', 'top_genes'],
-                            pagerank_result):
-            pagerank_collection[key].append(val)
+        pagerank_collection['top_genes'].append(top_genes)
 
     rbo, kl = [], []
 
@@ -85,8 +74,8 @@ if __name__ == '__main__':
     stochastic_network = nx.stochastic_graph(network)
     matrix_P = nx.adjacency_matrix(stochastic_network, stochastic_network.nodes,
                                    weight='weight').todense()
-    pagerank, pagerank_dict, top_genes = get_pagerank_statistic(matrix_P,
-                                                                       alpha=0.85,
-                                                                       v=get_personalisation_vector_by_deg(network.nodes, gene_deg))
+    personalisation = get_personalisation_vector_by_deg(network.nodes, gene_deg)
+    pagerank = linear_system_pagerank(matrix_P, alpha=0.85, v=personalisation)
+    pagerank_dict, top_genes = format_pagerank(pagerank, network)
 
     print(f'{top_genes[:25]=}')

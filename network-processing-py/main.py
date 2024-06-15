@@ -6,7 +6,8 @@ from matplotlib import pyplot as plt
 from gene_data import get_gene_differential_expressions
 from weighting import WeightVectorMethod, expressions, get_TRRUST_subset, \
     get_TFLink_subset, get_STRING_subset, TF, TARGET
-from pagerank import linear_pagerank, get_personalisation_vector_by_deg
+from pagerank import linear_system_pagerank, get_personalisation_vector_by_deg, \
+    format_pagerank
 from graphic import draw_network_pagerank
 
 
@@ -15,6 +16,9 @@ from graphic import draw_network_pagerank
 # don't recommend dropping more than 20% as TP53 (important) has low expression
 THRESHOLD_DEG = -1
 
+
+def unzip(iterable):
+    return zip(*iterable)
 
 def generate_networkx_graph(_df, _weighting):
     network = nx.DiGraph()
@@ -68,20 +72,14 @@ Weighting method                           {weighting.__name__}''')
     stochastic_network = nx.stochastic_graph(network)
     matrix_P = nx.adjacency_matrix(stochastic_network, stochastic_network.nodes,
                                    weight='weight').todense()
+    personalisation = get_personalisation_vector_by_deg(network.nodes, gene_deg)
     print('Formulated matrix problem.')
 
-    pagerank = linear_pagerank(matrix_P, alpha=0.85,
-                               v=get_personalisation_vector_by_deg(network.nodes, gene_deg))
+    pagerank = linear_system_pagerank(matrix_P, v=personalisation, alpha=0.85)
     print('Computed PageRanks.')
 
-    pagerank_dict = {k: v for k, v in zip(network.nodes, pagerank)}
-
-    genes = [(item[0], item[1]) for item in zip(network.nodes, pagerank)]
-    top_genes = sorted(genes, key=lambda x: -x[1])
-    top_gene_names = [data[0] for data in top_genes]
-    top_pageranks = [data[1] for data in top_genes]
+    pagerank_dict, top_genes = format_pagerank(pagerank, network)
+    top_gene_names, top_pageranks = unzip(top_genes)
 
     # Visualise 'top 50' genes
     draw_network_pagerank(network, pagerank_dict, top_gene_names, top_pageranks)
-    plt.show()
-

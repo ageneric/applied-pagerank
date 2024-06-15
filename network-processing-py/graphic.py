@@ -1,17 +1,9 @@
 import networkx as nx
 import numpy as np
 from matplotlib import pyplot as plt
-import measure
 
 
 plt.style.use('ggplot')
-
-
-def _n(tup):
-    return [x[0] for x in tup]
-
-def _p(tup):
-    return [x[1] for x in tup]
 
 
 def draw_network_pagerank(network, pagerank_dict, top_gene_names, top_pageranks, top_n=40):
@@ -19,6 +11,7 @@ def draw_network_pagerank(network, pagerank_dict, top_gene_names, top_pageranks,
     scale = 900 / max(0.01, top_pageranks[0])
     sizes = np.array([pagerank_dict[node] for node in view_network.nodes]) * scale
     nx.draw(view_network, node_size=sizes, with_labels=True)
+    plt.show()
 
 def draw_power_law(sorted_values, figure_mode=0, tex=False):
     """0 - Standard plot; 1 - Truncated plot with x^1.333 line"""
@@ -43,8 +36,12 @@ def draw_power_law(sorted_values, figure_mode=0, tex=False):
 
 def draw_gene_deg_plot(gene_deg, top_gene_names):
     plt.plot([gene_deg[g] for g in top_gene_names[:1500]])
+    plt.show()
 
-def draw_stability_region():
+def draw_divergence_plot(pagerank_collection):
+    plt.show()
+
+def draw_robustness_region(pagerank_collection):
     plt.show()
 
 def write_to_graphml(network, pagerank_dict, gene_deg, name='graph'):
