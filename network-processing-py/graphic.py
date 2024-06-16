@@ -13,17 +13,24 @@ def draw_network_pagerank(network, pagerank_dict, top_gene_names, top_pageranks,
     nx.draw(view_network, node_size=sizes, with_labels=True)
     plt.show()
 
-def draw_power_law(sorted_values, figure_mode=0, tex=False):
+def draw_power_law(sorted_values, figure_mode=0, text_values=None, tex=False):
     """0 - Standard plot; 1 - Truncated plot with x^1.333 line"""
-    if figure_mode % 2:
-        sorted_values = sorted_values[:10000]
+    if text_values is None:
+        xl = 'Gene Index'
+        yl = 'Gene Differential Expression'
+        title = 'Power Law Distribution Plot of Gene Differential Expressions'
+    else:
+        xl, yl, title = text_values
 
     plt.figure(figsize=(10, 6))
     plt.yscale('log')
     plt.xscale('log')
-    plt.xlabel('Gene Index')
-    plt.ylabel('Gene Differential Expression')
-    plt.title('Power Law Distribution Plot of Gene Differential Expressions')
+    plt.xlabel(xl)
+    plt.ylabel(yl)
+    plt.title(title)
+
+    if figure_mode % 2:
+        sorted_values = sorted_values[:10000]
 
     plt.plot(sorted_values)
 
